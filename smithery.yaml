@@ -1,0 +1,15 @@
+# Smithery deployment config.
+#
+# runtime "container" tells Smithery to build the Dockerfile in this repo and
+# run it. The container serves the MCP over Streamable HTTP at POST /mcp on the
+# port Smithery provides via $PORT (see src/http.ts).
+#
+# AUTH / API KEY:
+#   The server reads the GlassHive key from the GLASSHIVE_API_KEY environment
+#   variable (see src/client.ts). Set it as a deployment secret/env var in the
+#   Smithery dashboard when you create the deployment — do NOT commit it here.
+#
+# NOTE: Smithery's deploy schema has been changing; if their Deploy wizard asks
+# for additional fields (e.g. a startCommand / configSchema block), follow the
+# wizard — it is the source of truth. This file is a working starting point.
+runtime: "container"
