@@ -11,7 +11,20 @@ import { buildServer } from "./server.js";
  *
  * The GlassHive API key is read from process.env.GLASSHIVE_API_KEY (see
  * src/client.ts), so set it as an environment variable / secret on the host.
+ *
+ * Access control: if MCP_AUTH_TOKEN is set, every /mcp request must carry
+ * `Authorization: Bearer <MCP_AUTH_TOKEN>`. This keeps the public URL from being
+ * usable by anyone who finds it — the gateway (Smithery) is configured with the
+ * token; direct callers without it get 401. If MCP_AUTH_TOKEN is unset the
+ * endpoint is open (intended only for local development).
  */
+
+const AUTH_TOKEN = process.env.MCP_AUTH_TOKEN;
+
+function isAuthorized(req: Request): boolean {
+  if (!AUTH_TOKEN) return true; // no token configured -> open (local/dev only)
+  return req.get("authorization") === `Bearer ${AUTH_TOKEN}`;
+}
 
 const app = express();
 app.use(express.json());
@@ -22,6 +35,14 @@ app.get("/health", (_req: Request, res: Response) => {
 });
 
 app.post("/mcp", async (req: Request, res: Response) => {
+  if (!isAuthorized(req)) {
+    res.status(401).json({
+      jsonrpc: "2.0",
+      error: { code: -32001, message: "Unauthorized" },
+      id: null,
+    });
+    return;
+  }
   try {
     const server = buildServer();
     const transport = new StreamableHTTPServerTransport({
